@@ -111,11 +111,8 @@ async function readWorkerMessage(msg) {
 
 let sRGBCache = new Array(16384);
 for(let i = 0; i < 16384; i ++) {
-  const val = i / 16384;
-  sRGBCache[i] = (val <= 0.040449936 ? val / 12.92 : Math.pow((val + 0.055) / 1.055, 2.4)) * 255;
-}
-function tosRGB(v, x, y) {
-  return Math.round(sRGBCache[v >> 2] + voidAndClusterMatrix[x % 64][y % 64]);
+  const val = i / 16383;
+  sRGBCache[i] = (val <= 0.0031308 ? val * 12.92 : 1.055 * Math.pow(val, 1 / 2.4) - 0.055) * 255;
 }
 
 async function draw(prior, callback) {

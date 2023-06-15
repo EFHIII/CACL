@@ -2,7 +2,7 @@
 AKA CACL (pronounced Cackle)
 
 ## Reason for existing
-The HTML Canvas has a decent drawing API, and there are other libraries like (P5.js)[https://p5js.org/] that do a good job of adding convenience functions for it. Unfortunately, most libraries have a problem. They don't do anti-aliasing properly. Usually it's not very noticeable, but for some things, it's very noticeable. Just to illustrate the problem, here's an example of what a green circle looks like on a red background using the HTML Canvas API.
+The HTML Canvas has a decent drawing API, and there are other libraries like [P5.js](https://p5js.org/) that do a good job of adding convenience functions for it. Unfortunately, most libraries have a problem. They don't do anti-aliasing properly. Usually it's not very noticeable, but for some things, it's very noticeable. Just to illustrate the problem, here's an example of what a green circle looks like on a red background using the HTML Canvas API.
 
 !(image of green circle on red background with dark outline)[]
 

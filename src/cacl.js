@@ -149,20 +149,20 @@ const cacl = {
     "yellow": [255, 255, 0],
     "yellowgreen": [154, 205, 50]
   },
-  sRGBtolRGB: ({r, g, b, a}) => {
+  lRGBtosRGB: ({r, g, b, a}) => {
     return {
-      r: r <= 0.0031308 ? 12.92 * r : 1.055 * Math.pow(r, 1 / 2.4) - 0.055,
-      g: g <= 0.0031308 ? 12.92 * g : 1.055 * Math.pow(g, 1 / 2.4) - 0.055,
-      b: b <= 0.0031308 ? 12.92 * b : 1.055 * Math.pow(b, 1 / 2.4) - 0.055,
-      a: a <= 0.0031308 ? 12.92 * a : 1.055 * Math.pow(a, 1 / 2.4) - 0.055,
+      r: Math.max(0, Math.min(1, r <= 0.0031308 ? 12.92 * r : 1.055 * Math.pow(r, 1 / 2.4) - 0.055)),
+      g: Math.max(0, Math.min(1, g <= 0.0031308 ? 12.92 * g : 1.055 * Math.pow(g, 1 / 2.4) - 0.055)),
+      b: Math.max(0, Math.min(1, b <= 0.0031308 ? 12.92 * b : 1.055 * Math.pow(b, 1 / 2.4) - 0.055)),
+      a: Math.max(0, Math.min(1, a)),
     };
   },
-  lRGBtosRGB: ({r, g, b}) => {
+  sRGBtolRGB: ({r, g, b, a}) => {
     return {
-      r: r <= 0.040449936 ? r / 12.92 : Math.pow((r + 0.055) / 1.055, 2.4),
-      g: g <= 0.040449936 ? g / 12.92 : Math.pow((g + 0.055) / 1.055, 2.4),
-      b: b <= 0.040449936 ? b / 12.92 : Math.pow((b + 0.055) / 1.055, 2.4),
-      a: a <= 0.040449936 ? a / 12.92 : Math.pow((a + 0.055) / 1.055, 2.4),
+      r: Math.max(0, Math.min(1, r <= 0.040449936 ? r / 12.92 : Math.pow((r + 0.055) / 1.055, 2.4))),
+      g: Math.max(0, Math.min(1, g <= 0.040449936 ? g / 12.92 : Math.pow((g + 0.055) / 1.055, 2.4))),
+      b: Math.max(0, Math.min(1, b <= 0.040449936 ? b / 12.92 : Math.pow((b + 0.055) / 1.055, 2.4))),
+      a: Math.max(0, Math.min(1, a)),
     }
   },
   parseCSSColorString: cssString => {
@@ -177,26 +177,26 @@ const cacl = {
       }
       if(cssString.length === 4) {
         return cacl.sRGBtolRGB({
-          r: parseInt(colorString.slice(1, 2), 16) * 16 / 255,
-          g: parseInt(colorString.slice(2, 3), 16) * 16 / 255,
-          b: parseInt(colorString.slice(3), 16) * 16 / 255,
+          r: parseInt(cssString.slice(1, 2), 16) / 15,
+          g: parseInt(cssString.slice(2, 3), 16) / 15,
+          b: parseInt(cssString.slice(3), 16) / 15,
           a: 1
         });
       }
       if(cssString.length === 9) {
         return cacl.sRGBtolRGB({
-          r: parseInt(colorString.slice(1, 3), 16) / 255,
-          g: parseInt(colorString.slice(3, 5), 16) / 255,
-          b: parseInt(colorString.slice(5, 7), 16) / 255,
-          a: parseInt(colorString.slice(7), 16) / 255
+          r: parseInt(cssString.slice(1, 3), 16) / 255,
+          g: parseInt(cssString.slice(3, 5), 16) / 255,
+          b: parseInt(cssString.slice(5, 7), 16) / 255,
+          a: parseInt(cssString.slice(7), 16) / 255
         });
       }
       if(cssString.length === 5) {
         return cacl.sRGBtolRGB({
-          r: parseInt(colorString.slice(1, 2), 16) * 16 / 255,
-          g: parseInt(colorString.slice(2, 3), 16) * 16 / 255,
-          b: parseInt(colorString.slice(3, 4), 16) * 16 / 255,
-          a: parseInt(colorString.slice(4), 16) * 16 / 255
+          r: parseInt(cssString.slice(1, 2), 16) / 15,
+          g: parseInt(cssString.slice(2, 3), 16) / 15,
+          b: parseInt(cssString.slice(3, 4), 16) / 15,
+          a: parseInt(cssString.slice(4), 16) / 15
         });
       }
     }
@@ -215,7 +215,7 @@ const cacl = {
         r: m[0] / 255,
         g: m[1] / 255,
         b: m[2] / 255,
-        a: m[3] / 255
+        a: m[3]
       });
     }
     if(cacl.CSSColors.hasOwnProperty(cssString)) {
