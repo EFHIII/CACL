@@ -1,7 +1,8 @@
 'use strict';
-let canvas, ctx, canvasImage, workers, threads, free, queue, queuePoints, priority, nextPriority;
+let canvas, ctx, canvasImage;
 
-let imageData, width, height, fillStyle;
+let imageData, width, height;
+let fillStyle = {r: 0, g: 0, b: 0, a: 1};
 
 importScripts('drawingFunctions.js');
 
@@ -78,48 +79,13 @@ for(let i = 0; i < 64; i++) {
   }
 }
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-async function readWorkerMessage(msg) {
-  if(queue.length > 0 && queuePoints >= width * height * 4) {
-    workers[msg.data.id].postMessage(queue);
-    queue = [];
-    queuePoints = 0;
-  }
-  else {
-    free.push(msg.data.id);
-  }
-
-  while(msg.data.minPriority !== nextPriority) {
-    await sleep(0);
-  }
-
-  for(let x = 0; x < width; x++) {
-    for(let y = 0; y < height; y++) {
-      const pos = (x + y * width) * 4;
-      const alpha = msg.data.imageData[pos + 3] / 65535;
-      if(alpha === 0) continue;
-      imageData[pos + 0] = msg.data.imageData[pos + 0] * alpha + (1 - alpha) * (imageData[pos + 0]);
-      imageData[pos + 1] = msg.data.imageData[pos + 1] * alpha + (1 - alpha) * (imageData[pos + 1]);
-      imageData[pos + 2] = msg.data.imageData[pos + 2] * alpha + (1 - alpha) * (imageData[pos + 2]);
-    }
-  }
-  nextPriority = msg.data.maxPriority + 1;
-}
-
 let sRGBCache = new Array(16384);
 for(let i = 0; i < 16384; i ++) {
   const val = i / 16383;
   sRGBCache[i] = (val <= 0.0031308 ? val * 12.92 : 1.055 * Math.pow(val, 1 / 2.4) - 0.055) * 255;
 }
 
-async function draw(prior, callback) {
-  while(prior !== nextPriority) {
-    await sleep(0);
-  }
-
+function draw(callback) {
   for(let x = 0; x < width; x++) {
     for(let y = 0; y < height; y++) {
       const pos = (x + y * width) * 4;
@@ -131,12 +97,11 @@ async function draw(prior, callback) {
   }
 
   ctx.putImageData(canvasImage, 0, 0);
-  nextPriority++;
 
   postMessage({callback});
 }
 
-onmessage = async function(msg) {
+onmessage = function(msg) {
   if(msg.data.hasOwnProperty('canvas')) {
     canvas = msg.data.canvas;
     ctx = canvas.getContext('2d', {
@@ -155,79 +120,13 @@ onmessage = async function(msg) {
     // 16 bits are used to preserve color quality
     // No alpha channel is used
     imageData = new Uint16Array(width * height * 4).fill(65535);
+  }
+  else if(msg.data.function === 'draw') {
+    drawThings(msg.data.tasks, msg.data.beforeTaskIndex);
 
-    workers = [];
-    free = [];
-    queue = [];
-    queuePoints = 0;
-    priority = 0;
-    nextPriority = 0;
-    threads = Math.max(2, msg.data.threads);
-    for(let i = 0; i < threads; i++) {
-      free.push(i);
-      workers[i] = new Worker('worker.js');
-      workers[i].postMessage({start: true, id: i});
-      workers[i].onmessage = readWorkerMessage;
-    }
+    draw(msg.data.params[0]);
   }
   else {
-    switch(msg.data.function) {
-      case 'fillRect':
-        queue.push({...msg.data, priority});
-        queuePoints += msg.data.params[2] * msg.data.params[3];
-        priority++;
-        while(free.length === threads && queue.length > 0 && queuePoints < width * height * 4 && queue[0].priority !== nextPriority) {
-          await sleep(0);
-        }
-        if(free.length === threads && queue.length > 0 && queuePoints < width * height * 4 && queue[0].priority === nextPriority) {
-          for(let i = 0; i < queue.length; i++) {
-            drawThing(queue[i]);
-          }
-          nextPriority = queue[queue.length - 1].priority + 1;
-          queue = [];
-          queuePoints = 0;
-        }
-        else if(free.length > 0 && queue.length > 0) {
-          const id = free.splice(0, 1);
-          //console.log(`worker ${id}:`, Math.max(300, queue.length / (free.length + 1)));
-          const take = Math.max(queue.length * (queuePoints / (width * height)), queue.length / (free.length + 1));
-          queuePoints = Math.max(0, queuePoints - take / queue.length * queuePoints);
-          workers[id].postMessage(queue.splice(0, take));
-        }
-      break;
-      case 'draw':
-        for(let task = 0; task < msg.data.tasks.length; task++) {
-          switch(msg.data.tasks[task].function) {
-            case 'fillRect':
-              queue.push({...msg.data.tasks[task], priority});
-              queuePoints += msg.data.tasks[task].params[2] * msg.data.tasks[task].params[3];
-              priority++;
-            break;
-          }
-        }
-
-        if(free.length === threads && queue.length > 0 && queuePoints < width * height * 4 && queue[0].priority === nextPriority) {
-          for(let i = 0; i < queue.length; i++) {
-            drawThing(queue[i]);
-          }
-          nextPriority = queue[queue.length - 1].priority + 1;
-          queue = [];
-          queuePoints = 0;
-        }
-        else if(free.length > 0 && queue.length > 0) {
-          const maxThreads = Math.max(1, Math.min(free.length, queuePoints / (width * height * 4)));
-          const take = Math.ceil(queue.length / maxThreads);
-          for(let i = 0; i < maxThreads; i++) {
-            const id = free.splice(0, 1);
-            workers[id].postMessage(queue.splice(0, take));
-          }
-          queuePoints = 0;
-        }
-        draw(priority, ...msg.data.params);
-        priority++;
-      break;
-      default:
-        console.error(`Unknown render-function: '${msg.data.function}'`);
-    }
+    console.error(`Unknown render command: '${msg.data}'`);
   }
 }

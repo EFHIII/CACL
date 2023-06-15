@@ -151,17 +151,17 @@ const cacl = {
   },
   lRGBtosRGB: ({r, g, b, a}) => {
     return {
-      r: Math.max(0, Math.min(1, r <= 0.0031308 ? 12.92 * r : 1.055 * Math.pow(r, 1 / 2.4) - 0.055)),
-      g: Math.max(0, Math.min(1, g <= 0.0031308 ? 12.92 * g : 1.055 * Math.pow(g, 1 / 2.4) - 0.055)),
-      b: Math.max(0, Math.min(1, b <= 0.0031308 ? 12.92 * b : 1.055 * Math.pow(b, 1 / 2.4) - 0.055)),
+      r: cacl.sRGBCache[Math.round(Math.max(0, Math.min(1, r)) * 16383)],
+      g: cacl.sRGBCache[Math.round(Math.max(0, Math.min(1, g)) * 16383)],
+      b: cacl.sRGBCache[Math.round(Math.max(0, Math.min(1, b)) * 16383)],
       a: Math.max(0, Math.min(1, a)),
     };
   },
   sRGBtolRGB: ({r, g, b, a}) => {
     return {
-      r: Math.max(0, Math.min(1, r <= 0.040449936 ? r / 12.92 : Math.pow((r + 0.055) / 1.055, 2.4))),
-      g: Math.max(0, Math.min(1, g <= 0.040449936 ? g / 12.92 : Math.pow((g + 0.055) / 1.055, 2.4))),
-      b: Math.max(0, Math.min(1, b <= 0.040449936 ? b / 12.92 : Math.pow((b + 0.055) / 1.055, 2.4))),
+      r: cacl.lRGBCache[Math.round(Math.max(0, Math.min(1, r)) * 16383)],
+      g: cacl.lRGBCache[Math.round(Math.max(0, Math.min(1, g)) * 16383)],
+      b: cacl.lRGBCache[Math.round(Math.max(0, Math.min(1, b)) * 16383)],
       a: Math.max(0, Math.min(1, a)),
     }
   },
@@ -224,25 +224,19 @@ const cacl = {
     return {r: 0, g: 0, b: 0, a: 1};
   },
   promises: {},
+  fillStyleID: 0,
+  fillRectID: 1,
   context: class {
-    fillStyle = false;
-    RGBFillStyle = {
-      r: 0,
-      g: 0,
-      b: 0
-    };
+    taskBufferSize = 1024;
+    atTaskIndex = 0;
+    tasks = new Float64Array(1024);
 
-    tasks = [];
-
-    constructor(canvas, threads) {
+    constructor(canvas) {
       this.canvas = canvas;
-      this.threadCount = threads ? threads : Math.max(navigator.hardwareConcurrency, 8) - 4;
-
       const offscreenCanvas = canvas.transferControlToOffscreen();
       this.renderThread = new Worker('src/render-worker.js');
       this.renderThread.postMessage({
-        canvas: offscreenCanvas,
-        threads: this.threadCount
+        canvas: offscreenCanvas
       }, [offscreenCanvas]);
       this.renderThread.onmessage = this.readRenderThreadMessage;
 
@@ -255,25 +249,38 @@ const cacl = {
       delete cacl.promises[msg.data.callback];
     }
 
-    getState() {
-      if(this.fillStyle) {
-        this.RGBFillStyle = cacl.parseCSSColorString(this.fillStyle);
-        this.fillStyle = false;
+    checkTaskBufferSize(plus) {
+      if(this.atTaskIndex + plus > this.taskBufferSize) {
+        this.taskBufferSize *= 2;
+        let newBuffer = new Float64Array(this.taskBufferSize);
+        newBuffer.set(this.tasks);
+        this.tasks = newBuffer;
       }
+    }
 
-      return {
-        width: this.width,
-        height: this.height,
-        fillStyle: this.RGBFillStyle
-      };
+    fill(r, g, b, a = 255) {
+      this.checkTaskBufferSize(5);
+      const RGB = cacl.sRGBtolRGB({
+        r: r / 255,
+        g: g / 255,
+        b: b / 255,
+        a: a / 255
+      });
+      this.fillStyle = false;
+      this.tasks[this.atTaskIndex++] = cacl.fillStyleID;
+      this.tasks[this.atTaskIndex++] = RGB.r;
+      this.tasks[this.atTaskIndex++] = RGB.g;
+      this.tasks[this.atTaskIndex++] = RGB.b;
+      this.tasks[this.atTaskIndex++] = RGB.a;
     }
 
     fillRect(x, y, w, h) {
-      this.tasks.push({
-        function: 'fillRect',
-        params: [x, y, w, h],
-        state: this.getState()
-      });
+      this.checkTaskBufferSize(5);
+      this.tasks[this.atTaskIndex++] = cacl.fillRectID;
+      this.tasks[this.atTaskIndex++] = x;
+      this.tasks[this.atTaskIndex++] = y;
+      this.tasks[this.atTaskIndex++] = w;
+      this.tasks[this.atTaskIndex++] = h;
     }
 
     draw() {
@@ -281,12 +288,15 @@ const cacl = {
       let promise = new Promise(resolve => resolver = resolve);
       let callback = Math.random();
       cacl.promises[callback] = resolver;
+
       this.renderThread.postMessage({
         function: 'draw',
         tasks: this.tasks,
+        beforeTaskIndex: this.atTaskIndex,
         params: [callback]
-      });
-      this.tasks = [];
+      }, [this.tasks.buffer]);
+      this.tasks = new Float64Array(this.taskBufferSize);
+      this.atTaskIndex = 0;
       return promise;
     }
   },
@@ -294,6 +304,15 @@ const cacl = {
     return new cacl.context(canvas);
   }
 };
+
+cacl.sRGBCache = new Array(16384);
+cacl.lRGBCache = new Array(16384);
+for(let i = 0; i < 16384; i ++) {
+  const val = i / 16383;
+  cacl.sRGBCache[i] = val <= 0.0031308 ? val * 12.92 : 1.055 * Math.pow(val, 1 / 2.4) - 0.055;
+  cacl.lRGBCache[i] = val <= 0.040449936 ? val / 12.92 : Math.pow((val + 0.055) / 1.055, 2.4);
+
+}
 
 for(let c in cacl.CSSColors) {
   cacl.CSSColors[c] = cacl.sRGBtolRGB({

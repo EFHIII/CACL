@@ -1,9 +1,3 @@
-let lRGBCache = new Array(4096);
-for(let i = 0; i < 4096; i ++) {
-  const val = i / 4095;
-  lRGBCache[i] = val <= 0.040449936 ? val / 12.92 : Math.pow((val + 0.055) / 1.055, 2.4);
-}
-
 function boundingBox(x, y, w, h) {
   const X = Math.max(Math.min(Math.floor(x), width), 0);
   const Y = Math.max(Math.min(Math.floor(y), height), 0);
@@ -181,19 +175,22 @@ function fillRect(x, y, w, h) {
   }
 }
 
-function loadState(state) {
-  width = state.width;
-  height = state.height;
-  fillStyle = state.fillStyle;
-}
-
-function drawThing(thing) {
-  switch (thing.function) {
-    case 'fillRect':
-      loadState(thing.state);
-      fillRect(...thing.params);
-    break;
-    default:
-      console.error(`in worker: unknown function '${thing.function}'`, thing);
+function drawThings(things, eoi) {
+  for(let i = 0; i < eoi;) {
+    switch (things[i++]) {
+      case 0: // fillStyle
+        fillStyle = {
+          r: things[i++],
+          g: things[i++],
+          b: things[i++],
+          a: things[i++]
+        };
+      break;
+      case 1: // fillRect
+        fillRect(things[i++], things[i++], things[i++], things[i++]);
+      break;
+      default:
+        throw(`in worker: unknown function '${things[i]}'`);
+    }
   }
 }
