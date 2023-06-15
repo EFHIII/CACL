@@ -69,7 +69,7 @@ loop();
 //let ctx2 = document.getElementById('canvas2').getContext('2d');
 
 const offscreenCanvas = document.getElementById('canvas2').transferControlToOffscreen();
-let thread = new Worker('offscreenCanvas.js');
+let thread = new Worker('src/offscreenCanvas.js');
 thread.postMessage({
   canvas: offscreenCanvas
 }, [offscreenCanvas]);
