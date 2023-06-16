@@ -86,9 +86,9 @@ for(let i = 0; i < 16384; i ++) {
 }
 
 function draw(callback) {
-  for(let x = 0; x < width; x++) {
-    for(let y = 0; y < height; y++) {
-      const pos = (x + y * width) * 4;
+  for(let y = 0; y < height; y++) {
+    let pos = (y * width) << 2;
+    for(let x = 0; x < width; x++, pos += 4) {
       const vc = voidAndClusterMatrix[x % 64][y % 64];
       canvasImage.data[pos + 0] = sRGBCache[imageData[pos + 0] >> 2] + vc;
       canvasImage.data[pos + 1] = sRGBCache[imageData[pos + 1] >> 2] + vc;

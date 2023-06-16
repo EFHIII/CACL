@@ -54,7 +54,7 @@ function loop() {
 
   fr++;
   if(fr % 50 === 49) {
-    libraryText.innerText = `Custom Library ${Math.round(1000 / (lastT[49] - lastT[0]) * 50)} fps`;
+    libraryText.innerText = `Custom Library ${Math.round(10000 / (lastT[49] - lastT[0]) * 50)/10} fps`;
   }
 
 
@@ -80,6 +80,6 @@ thread.onmessage = msg => {
   lastT2.shift();
   lastT2.push(msg.data);
   if(fr2 % 50 === 49) {
-    canvasText.innerText = `Canvas ${Math.round(1000 / (lastT2[49] - lastT2[0]) * 50)} fps`;
+    canvasText.innerText = `Canvas ${Math.round(10000 / (lastT2[49] - lastT2[0]) * 50)/10} fps`;
   }
 };
