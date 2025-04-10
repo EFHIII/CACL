@@ -6,26 +6,36 @@ Demo: https://efhiii.github.io/CACL
 ## Reason for existing
 The HTML Canvas has a decent drawing API, and there are other libraries like [P5.js](https://p5js.org/) that do a good job of adding convenience functions for it. Unfortunately, most libraries have a problem. They don't do anti-aliasing properly. Usually it's not very noticeable, but for some things, it's very noticeable. Just to illustrate the problem, here's an example of what a green circle looks like on a red background using the HTML Canvas API.
 
-!(image of green circle on red background with dark outline)[]
+![image of green circle on red background with dark outline](https://github.com/user-attachments/assets/1298cb3f-1a5a-43f8-b230-b014e5025228)
 
 Here's what it looks like using this library.
 
-!(image of green circle on red background without dark outline)[]
+![image of green circle on red background without dark outline](https://github.com/user-attachments/assets/a7a6ce1b-d2de-46ee-975b-7eb4947a0be8)
 
-This reason it's wrong has to do with linear color interpolation in sRGB, which is not a linear color space. The problem becomes even more apparent when animating shapes.
+The reason it's wrong has to do with linear color interpolation in sRGB, which is not a linear color space. The problem becomes even more apparent when animating shapes.
 
-<Gif>
+![sRGB-lines](https://github.com/user-attachments/assets/71b81bac-f1fa-424c-b2a5-48e4146ed3f6)
 
 Notice the flickering.
 
-Here's the same thing, but using this library:
+Here's the same thing, but using CACL:
 
-<Gif>
+![CACL-lines](https://github.com/user-attachments/assets/6a9161ea-76d2-4dd6-8a6e-85e5183608f5)
+
+Another thing this library does is store color in high bit-depth and then render using dithering. The most obvious benefit being smooth gradients.
+
+here's a gradient in the HTML Canvas
+
+![gradient with banding](https://github.com/user-attachments/assets/7f595bb9-53dc-4840-97d2-84bcfc09f346)
+
+and in CACL
+
+![gradient with dithering](https://github.com/user-attachments/assets/bc3f750f-6cbb-4631-ba3b-eca5597a676e)
 
 ## Features
-This library renders shapes, lines, curves, bitmaps, and images with color-accurate blending and antialiasing. ~~Normal text isn't supported at the moment, but to compensate, a custom form of bitmap fonts is and extended versions of *Press Start 2P* and *Minecraft* are included. If you want non-bitmap fonts, it's recommended to use HTML elements placed on top of the canvas via CSS.~~ Nothing is supported at the moment.
+This library renders with color-accurate blending and antialiasing. It also stores color in a high bit depth and dithers to simulate higher than 8-bit color.
 
-It's important to note that all colors are worked on in the linear sRGB space. convenience functions are available for converting from other common formats.
+It's important to note that all colors are worked on in the linear RGB space. convenience functions are available for converting to and from sRGB.
 
 A full list of functions is bellow:
 
