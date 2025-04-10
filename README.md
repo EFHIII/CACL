@@ -29,8 +29,6 @@ It's important to note that all colors are worked on in the linear sRGB space. c
 
 A full list of functions is bellow:
 
-# EVERYTHING BELLOW THIS IS ASPIRATINAL, NOT REALITY
-
 ## Context management
 
 ### `cacl.createContext(canvas)`
@@ -38,84 +36,66 @@ A full list of functions is bellow:
 Creates a CACL context for a canvas
 
 ### `cacl.context.draw()`
-draws the CACL context to its canvas
+Draws the CACL context to its canvas
 This is when the conversion for linear sRGB to sRGB happens
 
 ### `cacl.context.setSize(width, height)`
-sets the width and height of the CACL context's canvas
-
-### `cacl.context.blendMode(mode)`
-- default: `blend`
-- options: `blend`, `add`, `multiply`, `darkest`, `lightest`, `difference`, `subtract`, `exclusion`, `screen`, `replace`, `remove`, `overlay`, `hard light`, `soft light`, `dodge`, `burn`
-
-### `calc.context.strokeCap()`
+Sets the width and height of the CACL context's canvas
 
 ## Drawing
 
 ### `cacl.context.background(color)`
-clears the CACL canvas and sets every pixel to the color `color`
+Clears the CACL canvas and sets every pixel to the color `color`
 
 ### `cacl.context.fill(color)`
-sets the fill color of the CACL context
+Sets the fill color of the CACL context
 
-### `cacl.context.stroke(color)`
-sets the fill color of the CACL context
-
-### `cacl.context.noFill()`
-sets to not fill shapes
-
-### `cacl.context.noStroke()`
-sets to not outline shapes
-
-### `cacl.context.strokeWidth(size)`
-sets the size of strokes
-
-### `cacl.context.rect(x, y, w, h, radius=0)`
-fills a rectangle at `(x, y)` of width `w` and height `h`
-if radius is set, the corners will be rounded with a radius of `radius` pixels
+### `cacl.context.fillRect(x, y, w, h)`
+Fills a rectangle at `(x, y)` of width `w` and height `h`
 
 ### `cacl.circle(x, y, radius)`
-fills a circle at `(x, y)` with a radius of `radius`
+Fills a circle at `(x, y)` with a radius of `radius`
 
-### `cacl.ellipse(x, y, w, h)`
-fills an ellipse at `(x, y)` with a width of `w` and height of `h`
+### `cacl.line(x1, y1, x2, y2)`
+Draws a line from (x1, y1) to (x2, y2)
 
-### `cacl.arc`
-
-### `cacl.line`
-
-### `cacl.point`
-
-### `cacl.triangle`
-
-### `cacl.quad`
+### `cacl.point(x, y)`
+Draws a point at (x, y)
 
 ## Shapes
 
-### `cacl.beginShape`
+### `cacl.beginPath()`
+Starts a shape
 
-### `cacl.endShape`
+### `cacl.closePath()`
+Ends a shape
 
-### `cacl.vertex`
+### `cacl.moveTo(x, y)`
+Appends a vertex to a shape
 
-### `cacl.bezierVertex`
+### `cacl.fillPath()`
+Draws the shape
+
+### `cacl.fillPathAliased()`
+Draws the shape without anti-aliasing
+
+### `cacl.strokePath()`
+Draws the outline of the shape
 
 ## Color
 
-### `color(r, g, b, alpha=255)`
+### `parseCSSColorString(cssString)`
 - Returns: `{r, g, b, a}`
+Parses a CSS color string and returns a color object.
+Supports hex (`#RGB`, `#RGBA`, `#RRGGBB`, and `#RRGGBBAA`), rgb (`rgb(red, green, blue)`), rgba (`rgba(red, green blue, alpha)`), and color names (ex. `mediumaquamarine`)
 
-### `linearColor(r, g, b, alpha=255)`
+### `sRGBtolRGB({r, g, b, a})`
 - Returns: `{r, g, b, a}`
+Converts a sRGB color object to a linear RGB color object
 
-### `CSSColor(colorString)`
+### `lRGBtosRGB({r, g, b, a})`
 - Returns: `{r, g, b, a}`
-
-### `hslColor(h, s, l, alpha=255)`
-- Returns: `{r, g, b, a}`
-
-### `hsvColor(h, s, v, alpha=255)`
-- Returns: `{r, g, b, a}`
+Converts a linear RGB color object to a sRGB color object
 
 ## interpolation
 
@@ -131,16 +111,16 @@ fills an ellipse at `(x, y)` with a width of `w` and height of `h`
 ### `averageColors([colors])`
 - Returns: `{r, g, b, a}`
 
-### `cubicBezier(t, p1, p2, m1, m2)`
-- Returns: `{x: float, y: float}`
-takes in 4 points, `{x, y}`; starting point `p1`, ending point `p2`, control point 1 `m1`, and control point 2, `m2`, and returns the interpolated point t along.
-
-### `pointOnBezier(bezier, x, resolution=20)`
+### `cubicBezier(p1, p2, p3, p4, t)`
 - Returns: `float`
-takes in a bezier object `{p1, p2, m1, m2}` and returns the `y` position of a point on the bezier at `x`
+Takes in 4 1D points; starting point `p1`, ending point `p4`, control point 1 `p2`, and control point 2, `p3`, and returns the interpolated point `t`.
+
+### `pointOnBezier(x1, y1, c1x, c1y, c2x, c2y, x2, y2, x, resolution = 20)`
+- Returns: `float`
+Takes in a bezier and returns the `y` position of a point on the bezier at `x`
 If there are multiple points on the bezier at `x`, it will only return the `y` position of one of them
 The process is iterative. By default, it does 20 steps which can be changed via `resolution`
 
 ### `easeValue(atTime, fromTime, toTime, fromValue, toValue, easeA, easeB, beforeFromTime = false, afterToTime = false, beforeFromValue = false, afterToValue = false, resolution = 20)`
 - Returns: `float`
-returns a value eased between `fromValue` and `toValue` at `atTime` optionally taking into account a previous control point and/or a subsequent control point
+Returns a value eased between `fromValue` and `toValue` at `atTime` optionally taking into account a previous control point and/or a subsequent control point
