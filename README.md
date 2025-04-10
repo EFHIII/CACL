@@ -115,9 +115,6 @@ Converts a linear RGB color object to a sRGB color object
 ### `lerpColor(color1, color2, factor = 0.5)`
 - Returns: `{r, g, b, a}`
 
-### `blend(color1, color2, blendMode = 'blend')`
-- Returns: `{r, g, b, a}`
-
 ### `averageColors([colors])`
 - Returns: `{r, g, b, a}`
 
