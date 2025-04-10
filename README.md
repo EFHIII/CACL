@@ -47,7 +47,7 @@ Creates a CACL context for a canvas
 
 ### `cacl.context.draw()`
 Draws the CACL context to its canvas
-This is when the conversion for linear sRGB to sRGB happens
+This is when the conversion for linear RGB to sRGB happens
 
 ### `cacl.context.setSize(width, height)`
 Sets the width and height of the CACL context's canvas
